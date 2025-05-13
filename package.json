@@ -2,6 +2,9 @@
   "name": "google-places-proxy",
   "version": "1.0.0",
   "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
   "dependencies": {
     "axios": "^1.4.0"
   }
