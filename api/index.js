@@ -2,13 +2,17 @@ import axios from 'axios';
 
 export default async function handler(req, res) {
   try {
+    // Get API Key from Environment Variable or Query Parameter
     const apiKey = process.env.GOOGLE_API_KEY || req.query.api_key;
     const businessName = req.query.business_name;
 
-    // Debug Logging
-    console.log('GOOGLE_API_KEY Loaded:', apiKey ? 'YES' : 'NO');
+    // Debug Logs
+    console.log('GOOGLE_API_KEY Loaded:', process.env.GOOGLE_API_KEY ? 'YES' : 'NO');
+    console.log('API Key from Query:', req.query.api_key ? 'PRESENT' : 'NOT PRESENT');
+    console.log('Final API Key Used:', apiKey ? 'YES' : 'NO');
     console.log('Business Name Provided:', businessName || 'NOT PROVIDED');
 
+    // Validate Inputs
     if (!apiKey) {
       console.error('Missing API Key.');
       return res.status(500).json({
@@ -19,11 +23,11 @@ export default async function handler(req, res) {
     if (!businessName) {
       console.error('Missing business_name parameter.');
       return res.status(400).json({
-        error: 'Missing business_name parameter.'
+        error: 'Missing business_name parameter. Add ?business_name=Your+Business+Name in the URL.'
       });
     }
 
-    // Step 1: Get place_id from Google Places API
+    // Step 1: Get Place ID from Google Places API
     const findPlaceResponse = await axios.get(
       'https://maps.googleapis.com/maps/api/place/findplacefromtext/json',
       {
@@ -42,12 +46,12 @@ export default async function handler(req, res) {
 
     if (!candidates || candidates.length === 0) {
       console.warn('No matching business found.');
-      return res.status(404).json({ error: 'No matching business found.' });
+      return res.status(404).json({ error: 'No matching business found for the provided name.' });
     }
 
     const placeId = candidates[0].place_id;
 
-    // Step 2: Get Business Details
+    // Step 2: Retrieve Business Details Using Place ID
     const detailsResponse = await axios.get(
       'https://maps.googleapis.com/maps/api/place/details/json',
       {
@@ -63,7 +67,7 @@ export default async function handler(req, res) {
 
     const result = detailsResponse.data.result;
 
-    // Flatten and ensure consistent response structure
+    // Return Flattened Response Matching OpenAPI Schema
     return res.status(200).json({
       name: result?.name || null,
       formatted_address: result?.formatted_address || null,
